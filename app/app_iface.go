@@ -306,6 +306,10 @@ type AppIface interface {
 	SearchAllChannels(c request.CTX, term string, opts model.ChannelSearchOpts) (model.ChannelListWithTeamData, int64, *model.AppError)
 	// SearchAllTeams returns a team list and the total count of the results
 	SearchAllTeams(searchOpts *model.TeamSearch) ([]*model.Team, int64, *model.AppError)
+
+	//test
+	SearchAllTeamsbyCompany(searchOpts *model.TeamSearch) ([]*model.Team, int64, *model.AppError)
+
 	// SendNoCardPaymentFailedEmail
 	SendNoCardPaymentFailedEmail() *model.AppError
 	// SessionHasPermissionToChannels returns true only if user has access to all channels.

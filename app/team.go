@@ -992,6 +992,22 @@ func (a *App) SearchAllTeams(searchOpts *model.TeamSearch) ([]*model.Team, int64
 	return results, int64(len(results)), nil
 }
 
+func (a *App) SearchAllTeamsbyCompany(searchOpts *model.TeamSearch) ([]*model.Team, int64, *model.AppError) {
+	if searchOpts.IsPaginated() {
+		teams, count, err := a.Srv().Store().Team().SearchAllPagedbyCompany(searchOpts)
+		if err != nil {
+			return nil, 0, model.NewAppError("SearchAllTeamsbyCompany", "app.team.search_all_team_by_company.app_error", nil, "", http.StatusInternalServerError).Wrap(err)
+		}
+
+		return teams, count, nil
+	}
+	results, err := a.Srv().Store().Team().SearchAllbyCompany(searchOpts)
+	if err != nil {
+		return nil, 0, model.NewAppError("SearchAllTeamsbyCompany", "app.team.search_all_team_by_company.app_error", nil, "", http.StatusInternalServerError).Wrap(err)
+	}
+	return results, int64(len(results)), nil
+}
+
 func (a *App) SearchPublicTeams(searchOpts *model.TeamSearch) ([]*model.Team, *model.AppError) {
 	teams, err := a.Srv().Store().Team().SearchOpen(searchOpts)
 	if err != nil {

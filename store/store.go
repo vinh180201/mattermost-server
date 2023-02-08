@@ -117,6 +117,10 @@ type TeamStore interface {
 	GetByNames(name []string) ([]*model.Team, error)
 	SearchAll(opts *model.TeamSearch) ([]*model.Team, error)
 	SearchAllPaged(opts *model.TeamSearch) ([]*model.Team, int64, error)
+
+	SearchAllPagedbyCompany(opts *model.TeamSearch) ([]*model.Team, int64, error)
+	SearchAllbyCompany(opts *model.TeamSearch) ([]*model.Team, error)
+
 	SearchOpen(opts *model.TeamSearch) ([]*model.Team, error)
 	SearchPrivate(opts *model.TeamSearch) ([]*model.Team, error)
 	GetAll() ([]*model.Team, error)

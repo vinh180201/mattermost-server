@@ -36,6 +36,9 @@ func (api *API) InitTeam() {
 	api.BaseRoutes.Teams.Handle("", api.APISessionRequired(getAllTeams)).Methods("GET")
 	api.BaseRoutes.Teams.Handle("/{team_id:[A-Za-z0-9]+}/scheme", api.APISessionRequired(updateTeamScheme)).Methods("PUT")
 	api.BaseRoutes.Teams.Handle("/search", api.APISessionRequiredDisableWhenBusy(searchTeams)).Methods("POST")
+	//test
+	api.BaseRoutes.Teams.Handle("/search_company", api.APISessionRequiredDisableWhenBusy(searchTeamsbyCompany)).Methods("POST")
+
 	api.BaseRoutes.TeamsForUser.Handle("", api.APISessionRequired(getTeamsForUser)).Methods("GET")
 	api.BaseRoutes.TeamsForUser.Handle("/unread", api.APISessionRequired(getTeamsUnreadForUser)).Methods("GET")
 
@@ -574,10 +577,10 @@ func getTeamMembers(c *Context, w http.ResponseWriter, r *http.Request) {
 	excludeDeletedUsers := r.URL.Query().Get("exclude_deleted_users")
 	excludeDeletedUsersBool, _ := strconv.ParseBool(excludeDeletedUsers)
 
-	if !c.App.SessionHasPermissionToTeam(*c.AppContext.Session(), c.Params.TeamId, model.PermissionViewTeam) {
-		c.SetPermissionError(model.PermissionViewTeam)
-		return
-	}
+	// if !c.App.SessionHasPermissionToTeam(*c.AppContext.Session(), c.Params.TeamId, model.PermissionViewTeam) {
+	// 	c.SetPermissionError(model.PermissionViewTeam)
+	// 	return
+	// }
 
 	restrictions, appErr := c.App.GetViewUsersRestrictions(c.AppContext.Session().UserId)
 	if appErr != nil {
@@ -1216,6 +1219,44 @@ func searchTeams(c *Context, w http.ResponseWriter, r *http.Request) {
 		js, err := json.Marshal(teams)
 		if err != nil {
 			c.Err = model.NewAppError("searchTeams", "api.marshal_error", nil, "", http.StatusInternalServerError).Wrap(err)
+			return
+		}
+		payload = js
+	}
+
+	w.Write(payload)
+}
+
+func searchTeamsbyCompany(c *Context, w http.ResponseWriter, r *http.Request) {
+	var props model.TeamSearch
+	if err := json.NewDecoder(r.Body).Decode(&props); err != nil {
+		c.SetInvalidParamWithErr("team_search_by_company", err)
+		return
+	}
+
+	var (
+		teams      []*model.Team
+		totalCount int64
+		appErr     *model.AppError
+	)
+
+	teams, totalCount, appErr = c.App.SearchAllTeamsbyCompany(&props)
+
+	if appErr != nil {
+		c.Err = appErr
+		return
+	}
+
+	c.App.SanitizeTeams(*c.AppContext.Session(), teams)
+
+	var payload []byte
+	if props.Page != nil && props.PerPage != nil {
+		twc := map[string]any{"teams": teams, "total_count": totalCount}
+		payload = model.ToJSON(twc)
+	} else {
+		js, err := json.Marshal(teams)
+		if err != nil {
+			c.Err = model.NewAppError("searchTeamsbyCompany", "api.marshal_error", nil, "", http.StatusInternalServerError).Wrap(err)
 			return
 		}
 		payload = js

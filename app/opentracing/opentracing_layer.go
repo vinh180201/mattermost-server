@@ -14571,6 +14571,28 @@ func (a *OpenTracingAppLayer) SearchAllTeams(searchOpts *model.TeamSearch) ([]*m
 	return resultVar0, resultVar1, resultVar2
 }
 
+func (a *OpenTracingAppLayer) SearchAllTeamsbyCompany(searchOpts *model.TeamSearch) ([]*model.Team, int64, *model.AppError) {
+	origCtx := a.ctx
+	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.SearchAllTeamsbyCompany")
+
+	a.ctx = newCtx
+	a.app.Srv().Store().SetContext(newCtx)
+	defer func() {
+		a.app.Srv().Store().SetContext(origCtx)
+		a.ctx = origCtx
+	}()
+
+	defer span.Finish()
+	resultVar0, resultVar1, resultVar2 := a.app.SearchAllTeamsbyCompany(searchOpts)
+
+	if resultVar2 != nil {
+		span.LogFields(spanlog.Error(resultVar2))
+		ext.Error.Set(span, true)
+	}
+
+	return resultVar0, resultVar1, resultVar2
+}
+
 func (a *OpenTracingAppLayer) SearchArchivedChannels(c request.CTX, teamID string, term string, userID string) (model.ChannelList, *model.AppError) {
 	origCtx := a.ctx
 	span, newCtx := tracing.StartSpanWithParentByContext(a.ctx, "app.SearchArchivedChannels")

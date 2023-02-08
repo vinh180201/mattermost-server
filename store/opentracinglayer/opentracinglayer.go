@@ -9566,6 +9566,24 @@ func (s *OpenTracingLayerTeamStore) SearchAll(opts *model.TeamSearch) ([]*model.
 	return result, err
 }
 
+func (s *OpenTracingLayerTeamStore) SearchAllbyCompany(opts *model.TeamSearch) ([]*model.Team, error) {
+	origCtx := s.Root.Store.Context()
+	span, newCtx := tracing.StartSpanWithParentByContext(s.Root.Store.Context(), "TeamStore.SearchAllbyCompany")
+	s.Root.Store.SetContext(newCtx)
+	defer func() {
+		s.Root.Store.SetContext(origCtx)
+	}()
+
+	defer span.Finish()
+	result, err := s.TeamStore.SearchAllbyCompany(opts)
+	if err != nil {
+		span.LogFields(spanlog.Error(err))
+		ext.Error.Set(span, true)
+	}
+
+	return result, err
+}
+
 func (s *OpenTracingLayerTeamStore) SearchAllPaged(opts *model.TeamSearch) ([]*model.Team, int64, error) {
 	origCtx := s.Root.Store.Context()
 	span, newCtx := tracing.StartSpanWithParentByContext(s.Root.Store.Context(), "TeamStore.SearchAllPaged")
@@ -9576,6 +9594,24 @@ func (s *OpenTracingLayerTeamStore) SearchAllPaged(opts *model.TeamSearch) ([]*m
 
 	defer span.Finish()
 	result, resultVar1, err := s.TeamStore.SearchAllPaged(opts)
+	if err != nil {
+		span.LogFields(spanlog.Error(err))
+		ext.Error.Set(span, true)
+	}
+
+	return result, resultVar1, err
+}
+
+func (s *OpenTracingLayerTeamStore) SearchAllPagedbyCompany(opts *model.TeamSearch) ([]*model.Team, int64, error) {
+	origCtx := s.Root.Store.Context()
+	span, newCtx := tracing.StartSpanWithParentByContext(s.Root.Store.Context(), "TeamStore.SearchAllPagedbyCompany")
+	s.Root.Store.SetContext(newCtx)
+	defer func() {
+		s.Root.Store.SetContext(origCtx)
+	}()
+
+	defer span.Finish()
+	result, resultVar1, err := s.TeamStore.SearchAllPagedbyCompany(opts)
 	if err != nil {
 		span.LogFields(spanlog.Error(err))
 		ext.Error.Set(span, true)

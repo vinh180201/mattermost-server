@@ -903,8 +903,59 @@ func (_m *TeamStore) SearchAll(opts *model.TeamSearch) ([]*model.Team, error) {
 	return r0, r1
 }
 
+func (_m *TeamStore) SearchAllbyCompany(opts *model.TeamSearch) ([]*model.Team, error) {
+	ret := _m.Called(opts)
+
+	var r0 []*model.Team
+	if rf, ok := ret.Get(0).(func(*model.TeamSearch) []*model.Team); ok {
+		r0 = rf(opts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Team)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.TeamSearch) error); ok {
+		r1 = rf(opts)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SearchAllPaged provides a mock function with given fields: opts
 func (_m *TeamStore) SearchAllPaged(opts *model.TeamSearch) ([]*model.Team, int64, error) {
+	ret := _m.Called(opts)
+
+	var r0 []*model.Team
+	if rf, ok := ret.Get(0).(func(*model.TeamSearch) []*model.Team); ok {
+		r0 = rf(opts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Team)
+		}
+	}
+
+	var r1 int64
+	if rf, ok := ret.Get(1).(func(*model.TeamSearch) int64); ok {
+		r1 = rf(opts)
+	} else {
+		r1 = ret.Get(1).(int64)
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(*model.TeamSearch) error); ok {
+		r2 = rf(opts)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+func (_m *TeamStore) SearchAllPagedbyCompany(opts *model.TeamSearch) ([]*model.Team, int64, error) {
 	ret := _m.Called(opts)
 
 	var r0 []*model.Team

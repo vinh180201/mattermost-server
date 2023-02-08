@@ -10929,11 +10929,53 @@ func (s *RetryLayerTeamStore) SearchAll(opts *model.TeamSearch) ([]*model.Team, 
 
 }
 
+func (s *RetryLayerTeamStore) SearchAllbyCompany(opts *model.TeamSearch) ([]*model.Team, error) {
+
+	tries := 0
+	for {
+		result, err := s.TeamStore.SearchAllbyCompany(opts)
+		if err == nil {
+			return result, nil
+		}
+		if !isRepeatableError(err) {
+			return result, err
+		}
+		tries++
+		if tries >= 3 {
+			err = errors.Wrap(err, "giving up after 3 consecutive repeatable transaction failures")
+			return result, err
+		}
+		timepkg.Sleep(100 * timepkg.Millisecond)
+	}
+
+}
+
 func (s *RetryLayerTeamStore) SearchAllPaged(opts *model.TeamSearch) ([]*model.Team, int64, error) {
 
 	tries := 0
 	for {
 		result, resultVar1, err := s.TeamStore.SearchAllPaged(opts)
+		if err == nil {
+			return result, resultVar1, nil
+		}
+		if !isRepeatableError(err) {
+			return result, resultVar1, err
+		}
+		tries++
+		if tries >= 3 {
+			err = errors.Wrap(err, "giving up after 3 consecutive repeatable transaction failures")
+			return result, resultVar1, err
+		}
+		timepkg.Sleep(100 * timepkg.Millisecond)
+	}
+
+}
+
+func (s *RetryLayerTeamStore) SearchAllPagedbyCompany(opts *model.TeamSearch) ([]*model.Team, int64, error) {
+
+	tries := 0
+	for {
+		result, resultVar1, err := s.TeamStore.SearchAllPagedbyCompany(opts)
 		if err == nil {
 			return result, resultVar1, nil
 		}

@@ -8609,6 +8609,22 @@ func (s *TimerLayerTeamStore) SearchAll(opts *model.TeamSearch) ([]*model.Team, 
 	return result, err
 }
 
+func (s *TimerLayerTeamStore) SearchAllbyCompany(opts *model.TeamSearch) ([]*model.Team, error) {
+	start := time.Now()
+
+	result, err := s.TeamStore.SearchAllbyCompany(opts)
+
+	elapsed := float64(time.Since(start)) / float64(time.Second)
+	if s.Root.Metrics != nil {
+		success := "false"
+		if err == nil {
+			success = "true"
+		}
+		s.Root.Metrics.ObserveStoreMethodDuration("TeamStore.SearchAllbyCompany", success, elapsed)
+	}
+	return result, err
+}
+
 func (s *TimerLayerTeamStore) SearchAllPaged(opts *model.TeamSearch) ([]*model.Team, int64, error) {
 	start := time.Now()
 
@@ -8621,6 +8637,22 @@ func (s *TimerLayerTeamStore) SearchAllPaged(opts *model.TeamSearch) ([]*model.T
 			success = "true"
 		}
 		s.Root.Metrics.ObserveStoreMethodDuration("TeamStore.SearchAllPaged", success, elapsed)
+	}
+	return result, resultVar1, err
+}
+
+func (s *TimerLayerTeamStore) SearchAllPagedbyCompany(opts *model.TeamSearch) ([]*model.Team, int64, error) {
+	start := time.Now()
+
+	result, resultVar1, err := s.TeamStore.SearchAllPagedbyCompany(opts)
+
+	elapsed := float64(time.Since(start)) / float64(time.Second)
+	if s.Root.Metrics != nil {
+		success := "false"
+		if err == nil {
+			success = "true"
+		}
+		s.Root.Metrics.ObserveStoreMethodDuration("TeamStore.SearchAllPagedbyCompany", success, elapsed)
 	}
 	return result, resultVar1, err
 }

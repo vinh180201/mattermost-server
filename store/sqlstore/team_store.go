@@ -503,12 +503,126 @@ func (s SqlTeamStore) teamSearchQuery(opts *model.TeamSearch, countQuery bool) s
 	return query
 }
 
+func (s SqlTeamStore) teamSearchQuerybyCompany(opts *model.TeamSearch, countQuery bool) sq.SelectBuilder {
+	var selectStr string
+	if countQuery {
+		selectStr = "count(*)"
+	} else {
+		selectStr = "t.*"
+		if opts.IncludePolicyID != nil && *opts.IncludePolicyID {
+			selectStr += ", RetentionPoliciesTeams.PolicyId as PolicyID"
+		}
+	}
+
+	query := s.getQueryBuilder().
+		Select(selectStr).
+		From("Teams as t")
+
+	// Don't order or limit if getting count
+	if !countQuery {
+		query = query.OrderBy("t.CompanyName")
+
+		if opts.IsPaginated() {
+			query = query.Limit(uint64(*opts.PerPage)).Offset(uint64(*opts.Page * *opts.PerPage))
+		}
+	}
+
+	term := opts.Term
+	if term != "" {
+		term = sanitizeSearchTerm(term, "\\")
+		term = wildcardSearchTerm(term)
+
+		operatorKeyword := "ILIKE"
+		if s.DriverName() == model.DatabaseDriverMysql {
+			operatorKeyword = "LIKE"
+		}
+
+		query = query.Where(fmt.Sprintf("CompanyName %[1]s ?", operatorKeyword), term)
+	}
+
+	if opts.PolicyID != nil && *opts.PolicyID != "" {
+		query = query.
+			InnerJoin("RetentionPoliciesTeams ON t.Id = RetentionPoliciesTeams.TeamId").
+			Where(sq.Eq{"RetentionPoliciesTeams.PolicyId": *opts.PolicyID})
+	} else if opts.ExcludePolicyConstrained != nil && *opts.ExcludePolicyConstrained {
+		query = query.
+			LeftJoin("RetentionPoliciesTeams ON t.Id = RetentionPoliciesTeams.TeamId").
+			Where("RetentionPoliciesTeams.TeamId IS NULL")
+	} else if opts.IncludePolicyID != nil && *opts.IncludePolicyID {
+		query = query.
+			LeftJoin("RetentionPoliciesTeams ON t.Id = RetentionPoliciesTeams.TeamId")
+	}
+
+	var teamFilters sq.Sqlizer
+	var openInviteFilter sq.Sqlizer
+	if opts.AllowOpenInvite != nil {
+		if *opts.AllowOpenInvite {
+			openInviteFilter = sq.Eq{"AllowOpenInvite": true}
+		} else {
+			openInviteFilter = sq.And{
+				sq.Or{
+					sq.NotEq{"AllowOpenInvite": true},
+					sq.Eq{"AllowOpenInvite": nil},
+				},
+				sq.Or{
+					sq.NotEq{"GroupConstrained": true},
+					sq.Eq{"GroupConstrained": nil},
+				},
+			}
+		}
+
+		teamFilters = openInviteFilter
+	}
+
+	var groupConstrainedFilter sq.Sqlizer
+	if opts.GroupConstrained != nil {
+		if *opts.GroupConstrained {
+			groupConstrainedFilter = sq.Eq{"GroupConstrained": true}
+		} else {
+			groupConstrainedFilter = sq.Or{
+				sq.NotEq{"GroupConstrained": true},
+				sq.Eq{"GroupConstrained": nil},
+			}
+		}
+
+		if teamFilters == nil {
+			teamFilters = groupConstrainedFilter
+		} else {
+			teamFilters = sq.Or{teamFilters, groupConstrainedFilter}
+		}
+	}
+
+	if opts.TeamType != nil {
+		teamTypeFilter := sq.Eq{"Type": *opts.TeamType}
+		teamFilters = sq.And{teamFilters, teamTypeFilter}
+	}
+
+	query = query.Where(teamFilters)
+
+	return query
+}
+
 // SearchAll returns from the database a list of teams that match the Name or DisplayName
 // passed as the term search parameter.
 func (s SqlTeamStore) SearchAll(opts *model.TeamSearch) ([]*model.Team, error) {
 	teams := []*model.Team{}
 
 	queryString, args, err := s.teamSearchQuery(opts, false).ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "team_tosql")
+	}
+
+	if err = s.GetReplicaX().Select(&teams, queryString, args...); err != nil {
+		return nil, errors.Wrapf(err, "failed to find Teams with term=%s", opts.Term)
+	}
+
+	return teams, nil
+}
+
+func (s SqlTeamStore) SearchAllbyCompany(opts *model.TeamSearch) ([]*model.Team, error) {
+	teams := []*model.Team{}
+
+	queryString, args, err := s.teamSearchQuerybyCompany(opts, false).ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "team_tosql")
 	}
@@ -534,6 +648,31 @@ func (s SqlTeamStore) SearchAllPaged(opts *model.TeamSearch) ([]*model.Team, int
 	}
 
 	queryString, args, err = s.teamSearchQuery(opts, true).ToSql()
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "team_tosql")
+	}
+
+	err = s.GetReplicaX().Get(&totalCount, queryString, args...)
+	if err != nil {
+		return nil, 0, errors.Wrapf(err, "failed to count Teams with term=%s", opts.Term)
+	}
+
+	return teams, totalCount, nil
+}
+
+func (s SqlTeamStore) SearchAllPagedbyCompany(opts *model.TeamSearch) ([]*model.Team, int64, error) {
+	teams := []*model.Team{}
+	var totalCount int64
+
+	queryString, args, err := s.teamSearchQuerybyCompany(opts, false).ToSql()
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "team_tosql")
+	}
+	if err = s.GetReplicaX().Select(&teams, queryString, args...); err != nil {
+		return nil, 0, errors.Wrapf(err, "failed to find Teams with term=%s", opts.Term)
+	}
+
+	queryString, args, err = s.teamSearchQuerybyCompany(opts, true).ToSql()
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "team_tosql")
 	}
