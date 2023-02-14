@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS Users (
     AuthService varchar(32) DEFAULT NULL,
     Email varchar(128) DEFAULT NULL,
     EmailVerified tinyint(1),
+    Introduce text DEFAULT NULL,
     Nickname varchar(64) DEFAULT NULL,
     FirstName varchar(64) DEFAULT NULL,
     LastName varchar(64) DEFAULT NULL,

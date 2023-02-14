@@ -83,6 +83,7 @@ type User struct {
 	Nickname               string    `json:"nickname"`
 	FirstName              string    `json:"first_name"`
 	LastName               string    `json:"last_name"`
+	Introduce              string    `json:"introduce,omitempty"`
 	Position               string    `json:"position"`
 	Roles                  string    `json:"roles"`
 	AllowMarketing         bool      `json:"allow_marketing,omitempty"`
@@ -156,6 +157,7 @@ type UserPatch struct {
 	Nickname    *string   `json:"nickname"`
 	FirstName   *string   `json:"first_name"`
 	LastName    *string   `json:"last_name"`
+	Introduce   *string   `json:"introduce"`
 	Position    *string   `json:"position"`
 	Email       *string   `json:"email"`
 	Props       StringMap `json:"props,omitempty"`
@@ -605,6 +607,10 @@ func (u *User) Patch(patch *UserPatch) {
 
 	if patch.LastName != nil {
 		u.LastName = *patch.LastName
+	}
+
+	if patch.Introduce != nil {
+		u.LastName = *patch.Introduce
 	}
 
 	if patch.Position != nil {

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     authservice VARCHAR(32),
     email VARCHAR(128) UNIQUE,
     emailverified boolean,
+    introduce VARCHAR(4000),
     nickname VARCHAR(64),
     firstname VARCHAR(64),
     lastname VARCHAR(64),

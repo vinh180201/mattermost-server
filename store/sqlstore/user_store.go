@@ -53,7 +53,9 @@ func newSqlUserStore(sqlStore *SqlStore, metrics einterfaces.MetricsInterface) s
 
 	// note: we are providing field names explicitly here to maintain order of columns (needed when using raw queries)
 	us.usersQuery = us.getQueryBuilder().
-		Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.AuthData", "u.AuthService", "u.Email", "u.EmailVerified", "u.Nickname", "u.FirstName", "u.LastName", "u.Position", "u.Roles", "u.AllowMarketing", "u.Props", "u.NotifyProps", "u.LastPasswordUpdate", "u.LastPictureUpdate", "u.FailedAttempts", "u.Locale", "u.Timezone", "u.MfaActive", "u.MfaSecret",
+		Select("u.Id", "u.CreateAt", "u.UpdateAt", "u.DeleteAt", "u.Username", "u.Password", "u.AuthData", "u.AuthService", "u.Email", "u.EmailVerified",
+			"u.Nickname", "u.FirstName", "u.LastName", "u.Introduce", "u.Position", "u.Roles", "u.AllowMarketing", "u.Props", "u.NotifyProps", "u.LastPasswordUpdate",
+			"u.LastPictureUpdate", "u.FailedAttempts", "u.Locale", "u.Timezone", "u.MfaActive", "u.MfaSecret",
 			"b.UserId IS NOT NULL AS IsBot", "COALESCE(b.Description, '') AS BotDescription", "COALESCE(b.LastIconUpdate, 0) AS BotLastIconUpdate", "u.RemoteId").
 		From("Users u").
 		LeftJoin("Bots b ON ( b.UserId = u.Id )")
@@ -81,12 +83,12 @@ func (us SqlUserStore) insert(user *model.User) (sql.Result, error) {
 
 	query := `INSERT INTO Users
 		(Id, CreateAt, UpdateAt, DeleteAt, Username, Password, AuthData, AuthService,
-			Email, EmailVerified, Nickname, FirstName, LastName, Position, Roles, AllowMarketing,
+			Email, EmailVerified, Nickname, FirstName, LastName, Introduce, Position, Roles, AllowMarketing,
 			Props, NotifyProps, LastPasswordUpdate, LastPictureUpdate, FailedAttempts,
 			Locale, Timezone, MfaActive, MfaSecret, RemoteId)
 		VALUES
 		(:Id, :CreateAt, :UpdateAt, :DeleteAt, :Username, :Password, :AuthData, :AuthService,
-			:Email, :EmailVerified, :Nickname, :FirstName, :LastName, :Position, :Roles, :AllowMarketing,
+			:Email, :EmailVerified, :Nickname, :FirstName, :LastName, :Introduce, :Position, :Roles, :AllowMarketing,
 			:Props, :NotifyProps, :LastPasswordUpdate, :LastPictureUpdate, :FailedAttempts,
 			:Locale, :Timezone, :MfaActive, :MfaSecret, :RemoteId)`
 
@@ -218,7 +220,7 @@ func (us SqlUserStore) Update(user *model.User, trustedUpdateData bool) (*model.
 	query := `UPDATE Users
 			SET CreateAt=:CreateAt, UpdateAt=:UpdateAt, DeleteAt=:DeleteAt, Username=:Username, Password=:Password,
 				AuthData=:AuthData, AuthService=:AuthService,Email=:Email, EmailVerified=:EmailVerified,
-				Nickname=:Nickname, FirstName=:FirstName, LastName=:LastName, Position=:Position, Roles=:Roles,
+				Nickname=:Nickname, FirstName=:FirstName, LastName=:LastName, Introduce=:Introduce, Position=:Position, Roles=:Roles,
 				AllowMarketing=:AllowMarketing, Props=:Props, NotifyProps=:NotifyProps,
 				LastPasswordUpdate=:LastPasswordUpdate, LastPictureUpdate=:LastPictureUpdate,
 				FailedAttempts=:FailedAttempts,Locale=:Locale, Timezone=:Timezone, MfaActive=:MfaActive,
@@ -446,7 +448,7 @@ func (us SqlUserStore) Get(ctx context.Context, id string) (*model.User, error) 
 	var props, notifyProps, timezone []byte
 	err = row.Scan(&user.Id, &user.CreateAt, &user.UpdateAt, &user.DeleteAt, &user.Username,
 		&user.Password, &user.AuthData, &user.AuthService, &user.Email, &user.EmailVerified,
-		&user.Nickname, &user.FirstName, &user.LastName, &user.Position, &user.Roles,
+		&user.Nickname, &user.FirstName, &user.LastName, &user.Position, &user.Introduce, &user.Roles,
 		&user.AllowMarketing, &props, &notifyProps, &user.LastPasswordUpdate, &user.LastPictureUpdate,
 		&user.FailedAttempts, &user.Locale, &timezone, &user.MfaActive, &user.MfaSecret,
 		&user.IsBot, &user.BotDescription, &user.BotLastIconUpdate, &user.RemoteId)
@@ -853,7 +855,10 @@ func (us SqlUserStore) GetAllProfilesInChannel(ctx context.Context, channelID st
 	for rows.Next() {
 		var user model.User
 		var props, notifyProps, timezone []byte
-		if err = rows.Scan(&user.Id, &user.CreateAt, &user.UpdateAt, &user.DeleteAt, &user.Username, &user.Password, &user.AuthData, &user.AuthService, &user.Email, &user.EmailVerified, &user.Nickname, &user.FirstName, &user.LastName, &user.Position, &user.Roles, &user.AllowMarketing, &props, &notifyProps, &user.LastPasswordUpdate, &user.LastPictureUpdate, &user.FailedAttempts, &user.Locale, &timezone, &user.MfaActive, &user.MfaSecret, &user.IsBot, &user.BotDescription, &user.BotLastIconUpdate, &user.RemoteId); err != nil {
+		if err = rows.Scan(&user.Id, &user.CreateAt, &user.UpdateAt, &user.DeleteAt, &user.Username, &user.Password, &user.AuthData, &user.AuthService,
+			&user.Email, &user.EmailVerified, &user.Nickname, &user.FirstName, &user.LastName, &user.Introduce, &user.Position, &user.Roles,
+			&user.AllowMarketing, &props, &notifyProps, &user.LastPasswordUpdate, &user.LastPictureUpdate, &user.FailedAttempts, &user.Locale, &timezone,
+			&user.MfaActive, &user.MfaSecret, &user.IsBot, &user.BotDescription, &user.BotLastIconUpdate, &user.RemoteId); err != nil {
 			return nil, errors.Wrap(err, "failed to scan values from rows into User entity")
 		}
 		if err = json.Unmarshal(props, &user.Props); err != nil {
