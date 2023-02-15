@@ -83,7 +83,7 @@ type User struct {
 	Nickname               string    `json:"nickname"`
 	FirstName              string    `json:"first_name"`
 	LastName               string    `json:"last_name"`
-	Introduce              string    `json:"introduce,omitempty"`
+	Introduce              string    `json:"introduce"`
 	Position               string    `json:"position"`
 	Roles                  string    `json:"roles"`
 	AllowMarketing         bool      `json:"allow_marketing,omitempty"`
